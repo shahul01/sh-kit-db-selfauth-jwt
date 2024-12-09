@@ -1,0 +1,37 @@
+import { json, redirect } from '@sveltejs/kit';
+import { getDb } from '$lib/server/db';
+import { verifyPassword, createJWT } from '$lib/server/auth';
+import type { PageServerLoad, RequestHandler } from './$types';
+
+
+export const load: PageServerLoad = async ({ locals }) => {
+    if (locals.userId) {
+        throw redirect(302, '/todos');
+    }
+};
+
+export const POST: RequestHandler = async ({ request, cookies }) => {
+    const { username, password } = await request.json();
+
+    if (!username || !password) {
+        return json({ error: 'Missing username or password' }, { status: 400 });
+    }
+
+    const db = getDb();
+    const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username);
+
+    if (!user || !(await verifyPassword(user.password, password))) {
+        return json({ error: 'Invalid credentials' }, { status: 401 });
+    }
+
+    const token = createJWT(user.id);
+    cookies.set('jwt', token, {
+        path: '/',
+        httpOnly: true,
+        sameSite: 'strict',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 60 * 60 * 24 // 24 hours
+    });
+
+    return json({ success: true });
+};

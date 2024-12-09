@@ -1,4 +1,6 @@
-# sv
+# sh-kit-db-selfauth-jwt
+
+## Simple SvelteKit app with no auth libraries, JWT, SQLite and Raw SQL.
 
 Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
 

@@ -21,8 +21,11 @@ export const POST: RequestHandler = async ({ request }) => {
     const hashedPassword = await hashPassword(password);
 
     try {
-        const result = db.prepare('INSERT INTO users (username, password) VALUES (?, ?)').run(username, hashedPassword);
+        const result = db
+            .prepare('INSERT INTO users (username, password) VALUES (?, ?)')
+            .run(username, hashedPassword);
         return json({ success: true, userId: result.lastInsertRowid });
+
     } catch (error) {
         return json({ error: 'Username already exists' }, { status: 400 });
     }

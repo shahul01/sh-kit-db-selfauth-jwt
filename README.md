@@ -14,7 +14,7 @@
 
 ## Screenshots - Home page
 
-![home.png](docs\assets\screenshots\home.png)
+![home.png](./docs/assets/screenshots/home.png)
 
 Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
 

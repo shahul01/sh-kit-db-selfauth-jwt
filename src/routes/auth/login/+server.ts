@@ -1,15 +1,17 @@
 import { json, redirect } from '@sveltejs/kit';
 import { getDb } from '$lib/server/db';
 import { verifyPassword, createJWT } from '$lib/server/auth';
-import type { PageServerLoad, RequestHandler } from './$types';
+import type { RequestHandler } from './$types';
+import type { PageServerLoad } from '../../todos/$types';
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const GET: PageServerLoad = async ({ locals }) => {
 	if (locals.userId) {
 		throw redirect(302, '/todos');
 	}
 };
 
 export const POST: RequestHandler = async ({ request, cookies }) => {
+	// TODO: add trycatch?
 	const { username, password } = await request.json();
 
 	if (!username || !password) {
@@ -17,9 +19,18 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 	}
 
 	const db = getDb();
-	const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username);
+	type User = {
+		id: number;
+		password: string;
+	};
+	const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username) as User;
 
-	if (!user || !(await verifyPassword(user.password, password))) {
+	if (!user.id || !user.password) {
+		return json({ error: 'Missing user id or password' }, { status: 400 });
+	}
+
+	const isPasswordVerified = await verifyPassword(user.password, password);
+	if (!user || !isPasswordVerified) {
 		return json({ error: 'Invalid credentials' }, { status: 401 });
 	}
 

@@ -1,0 +1,70 @@
+Total:
+  # bugs:
+
+
+
+  # problems:
+
+
+
+  # important:
+
+
+
+  # designs:
+    ☐ responsiveness
+
+
+
+  # tech stacks:
+    ☐ shad cn ui w/ proper class and variants
+
+
+
+  # ideas:
+
+
+
+  # refactors:
+
+
+
+  # backend:
+    ☐ Db - move init scripts as separate SQL
+
+
+
+  # performances:
+
+
+
+  # security:
+    ☐ Zod
+    ☐ CSRF
+
+
+
+  # tests:
+
+
+
+  # dev:
+
+
+
+  # misc:
+
+
+
+  # docs & references:
+    ☐ ./SECURITY.md
+
+
+
+  # symbols:
+    (+) - already mentioned in code inline
+    (?) -
+
+
+
+# Gist link:

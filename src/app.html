@@ -32,10 +32,10 @@
 		<!-- Security: Disable right-click context menu in production -->
 		<script>
 			if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-				document.addEventListener('contextmenu', function(e) {
-					e.preventDefault();
-					return false;
-				});
+				// document.addEventListener('contextmenu', function(e) {
+				// 	e.preventDefault();
+				// 	return false;
+				// });
 
 				// Disable F12, Ctrl+Shift+I, Ctrl+U
 				document.addEventListener('keydown', function(e) {

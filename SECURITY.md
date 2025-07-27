@@ -337,5 +337,5 @@ If you discover a security vulnerability, please:
 
 ---
 
-**Last Updated**: December 2024
+**Last Updated**: 27 July 2025
 **Security Review**: Required before production deployment

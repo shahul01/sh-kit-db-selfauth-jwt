@@ -1,43 +1,38 @@
-# sh-kit-db-selfauth-jwt
+# Todo List app: sh-kit-db-selfauth-jwt
+
+## SvelteKit app with SSR, TailwindCSS, TypeScript, SQLite db and JWT auth.
 
 ## commit legend
 
-- baf: backend, auth, frontend respectively
+- bpaf/s: backend, api, auth, frontend/svelte respectively
 
 ## Techstacks
 
 - Svelte + SvelteKit
 - TailwindCSS
 - TypeScript
-- Authentication via JWT
 - SQLite
+- Authentication via JWT
 
 ## Features
 
-✅ Todo
-✅ Authentication w/ salting, JWT, and rate limiting
-✅ Enhanced Password Security
-✅ Input Validation with Zod
-✅ Enhanced JWT Security
-✅ Rate Limiting
-✅ Security Headers & CSP
-✅ Structured Logging
-✅ Request Security Validation
-✅ Database Security
-✅ IP-Based Security
-✅ Session Security
+- ✅ Todo
+- ✅ Authentication w/ salting, JWT and rate limiting
+- ✅ Enhanced Password Security
+- ✅ Input Validation with Zod
 
-✅ JSON Web Token (JWT) for authentication
-✅ Rate limiting to prevent brute force attacks
-X Session fingerprinting
-X CSRF protection
-X CORS
-X Password strength checking to ensure secure passwords
-X Session fingerprinting to prevent session hijacking
+- ✅ Enhanced JWT Security
+- ✅ CSRF protection
+- ✅ CORS
+- ✅ Rate Limiting
+- ✅ Security Headers & CSP
+- ✅ IP-Based Security
+- ✅ Structured Logging
 
-## commit legend
-
-- bpas: backend, api, auth, svelte respectively
+<!-- - ✅ Request Security Validation
+- ✅ Database Security
+- ✅ Session Security
+- ✅ Session fingerprinting to prevent session hijacking -->
 
 ## Screenshots - Home page
 

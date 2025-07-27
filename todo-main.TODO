@@ -39,8 +39,9 @@ Total:
 
 
   # security:
-    ☐ Zod
-    ☐ CSRF
+    ☐ Refer Security Docs
+    ✔ Zod @done(25-07-27 06:05)
+    ✔ CSRF @done(25-07-27 06:05)
 
 
 

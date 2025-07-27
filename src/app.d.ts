@@ -2,9 +2,16 @@
 // for information about these interfaces
 declare global {
 	namespace App {
-		// interface Error {}
+		interface Error {
+			message: string;
+			code?: string;
+			requestId?: string;
+		}
 		interface Locals {
 			userId: number | undefined;
+			requestId?: string;
+			tokenId?: string;
+			tokenCreatedAt?: number;
 		}
 		// interface PageData {}
 		// interface PageState {}

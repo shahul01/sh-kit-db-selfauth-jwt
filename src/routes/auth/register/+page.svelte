@@ -26,6 +26,14 @@
 		if (!/^[a-zA-Z0-9_-]+$/.test(username.trim())) {
 			return 'Username can only contain letters, numbers, underscores, and hyphens';
 		}
+		// Check for reserved words (case insensitive)
+		const lowerUsername = username.trim().toLowerCase();
+		if (lowerUsername.includes('admin')) {
+			return 'Username cannot contain reserved words';
+		}
+		if (lowerUsername.includes('test')) {
+			return 'Username cannot contain reserved words';
+		}
 		return null;
 	}
 
@@ -40,7 +48,7 @@
 			return 'Password must be at least 8 characters long';
 		}
 		if (password.length > 128) {
-			return 'Password must be less than 128 characters';
+			return 'Password must be no more than 128 characters';
 		}
 		if (!/(?=.*[a-z])/.test(password)) {
 			return 'Password must contain at least one lowercase letter';
@@ -50,6 +58,17 @@
 		}
 		if (!/(?=.*\d)/.test(password)) {
 			return 'Password must contain at least one number';
+		}
+		// Check for special characters
+		if (!/(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])/.test(password)) {
+			return 'Password must contain at least one special character';
+		}
+		// Check for common weak patterns
+		if (password.toLowerCase().includes('password')) {
+			return 'Password cannot contain the word "password"';
+		}
+		if (password.toLowerCase().includes('123456')) {
+			return 'Password cannot contain common sequences';
 		}
 		return null;
 	}

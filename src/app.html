@@ -2,11 +2,51 @@
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
+
+		<!-- Security Headers -->
+		<meta http-equiv="X-Content-Type-Options" content="nosniff" />
+		<meta http-equiv="X-Frame-Options" content="DENY" />
+		<meta http-equiv="X-XSS-Protection" content="1; mode=block" />
+		<meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
+		<meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()" />
+
+		<!-- Content Security Policy will be set via hooks.server.ts -->
+
+		<!-- Standard Meta Tags -->
 		<link rel="icon" href="%sveltekit.assets%/favicon.png" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="description" content="Secure Todo App with SvelteKit, SQLite, and JWT Authentication" />
+		<meta name="author" content="SvelteKit Todo App" />
+		<meta name="robots" content="noindex, nofollow" />
+
+		<!-- Prevent caching of sensitive pages -->
+		<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+		<meta http-equiv="Pragma" content="no-cache" />
+		<meta http-equiv="Expires" content="0" />
+
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">
 		<div style="display: contents">%sveltekit.body%</div>
+
+		<!-- Security: Disable right-click context menu in production -->
+		<script>
+			if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+				document.addEventListener('contextmenu', function(e) {
+					e.preventDefault();
+					return false;
+				});
+
+				// Disable F12, Ctrl+Shift+I, Ctrl+U
+				document.addEventListener('keydown', function(e) {
+					if (e.key === 'F12' ||
+						// (e.ctrlKey && e.shiftKey && e.key === 'I') ||
+						(e.ctrlKey && e.key === 'u')) {
+						e.preventDefault();
+						return false;
+					}
+				});
+			}
+		</script>
 	</body>
 </html>

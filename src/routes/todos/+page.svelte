@@ -213,7 +213,7 @@
 	}
 
 	// Reactive computed values
-	$: completedCount = todos.filter(todo => todo.completed).length;
+	$: completedCount = todos.filter((todo) => todo.completed).length;
 	$: totalCount = todos.length;
 	$: pendingCount = totalCount - completedCount;
 </script>
@@ -226,7 +226,7 @@
 		<button
 			on:click={logout}
 			disabled={loading}
-			class="rounded bg-red-500 px-4 py-2 text-white hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
+			class="rounded bg-red-500 px-4 py-2 text-white hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-gray-400"
 		>
 			{loading ? 'Logging out...' : 'Logout'}
 		</button>
@@ -236,7 +236,7 @@
 		<div class="mb-4 rounded bg-red-100 p-3 text-red-700" role="alert">
 			{error}
 			<button
-				on:click={() => error = ''}
+				on:click={() => (error = '')}
 				class="ml-2 text-red-800 hover:text-red-900"
 				aria-label="Dismiss error"
 			>
@@ -246,13 +246,13 @@
 	{/if}
 
 	<!-- Todo Stats -->
-	{#if totalCount > 0}
-		<div class="mb-4 rounded bg-gray-100 p-3 text-sm">
-			<span class="font-medium">Total: {totalCount}</span> •
-			<span class="text-green-600">Completed: {completedCount}</span> •
-			<span class="text-blue-600">Pending: {pendingCount}</span>
-		</div>
-	{/if}
+	<div class="mb-4 rounded bg-gray-100 p-3 text-sm">
+		<span class="font-medium">Total todos: {totalCount}</span>
+		{#if totalCount}
+			• <span class="text-green-600">Completed: {completedCount}</span>
+			• <span class="text-blue-600">Pending: {pendingCount}</span>
+		{/if}
+	</div>
 
 	<!-- Add Todo Form -->
 	<form on:submit|preventDefault={addTodo} class="mb-6">
@@ -269,7 +269,7 @@
 			<button
 				type="submit"
 				disabled={loading || !newTodoTitle.trim()}
-				class="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
+				class="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-gray-400"
 			>
 				{loading ? 'Adding...' : 'Add'}
 			</button>
@@ -278,13 +278,13 @@
 
 	<!-- Todos List -->
 	{#if todos.length === 0}
-		<div class="text-center text-gray-500 py-8">
+		<div class="py-8 text-center text-gray-500">
 			<p>No todos yet. Add one above to get started!</p>
 		</div>
 	{:else}
 		<ul class="space-y-2">
 			{#each todos as todo (todo.id)}
-				<li class="flex items-center gap-2 rounded border p-3 hover:bg-gray-50 transition-colors">
+				<li class="flex items-center gap-2 rounded border p-3 transition-colors hover:bg-gray-50">
 					<input
 						type="checkbox"
 						checked={todo.completed}

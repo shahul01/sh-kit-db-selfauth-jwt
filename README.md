@@ -1,5 +1,9 @@
 # sh-kit-db-selfauth-jwt
 
+## commit legend
+
+- baf: backend, auth, frontend respectively
+
 ## Techstacks
 
 - Svelte + SvelteKit
@@ -7,6 +11,29 @@
 - TypeScript
 - Authentication via JWT
 - SQLite
+
+## Features
+
+✅ Todo
+✅ Authentication w/ salting, JWT, and rate limiting
+✅ Enhanced Password Security
+✅ Input Validation with Zod
+✅ Enhanced JWT Security
+✅ Rate Limiting
+✅ Security Headers & CSP
+✅ Structured Logging
+✅ Request Security Validation
+✅ Database Security
+✅ IP-Based Security
+✅ Session Security
+
+✅ JSON Web Token (JWT) for authentication
+✅ Rate limiting to prevent brute force attacks
+X Session fingerprinting
+X CSRF protection
+X CORS
+X Password strength checking to ensure secure passwords
+X Session fingerprinting to prevent session hijacking
 
 ## commit legend
 

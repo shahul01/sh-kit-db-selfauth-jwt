@@ -1,6 +1,9 @@
 import { json, redirect } from '@sveltejs/kit';
 import { getDb } from '$lib/server/db';
-import { verifyPassword, createJWT } from '$lib/server/auth';
+import { verifyPassword, createJWT, checkAuthRateLimit, clearAuthAttempts } from '$lib/server/auth';
+import { loginRequestSchema, userRowSchema } from '$lib/server/validation';
+import { logAuthEvent, logError, logSecurityEvent } from '$lib/server/logger';
+import { getClientIP } from '$lib/server/security';
 import type { RequestHandler, RequestEvent } from './$types';
 import type { PageServerLoad } from '../../todos/$types';
 
@@ -17,110 +20,158 @@ export const GET: PageServerLoad = async ({ locals }) => {
 		if (error instanceof Response) {
 			throw error;
 		}
-		console.error('Login GET error:', error);
+		logError(error instanceof Error ? error : new Error('Unknown error'), {
+			action: 'login_get_redirect'
+		});
 		throw redirect(302, '/');
 	}
 };
 
 /**
- * Validates input for login request
- */
-function validateLoginInput(username: unknown, password: unknown): string | null {
-	if (!username || typeof username !== 'string') {
-		return 'Username is required and must be a string';
-	}
-	if (!password || typeof password !== 'string') {
-		return 'Password is required and must be a string';
-	}
-	if (username.trim().length < 3) {
-		return 'Username must be at least 3 characters long';
-	}
-	if (password.length < 6) {
-		return 'Password must be at least 6 characters long';
-	}
-	return null;
-}
-
-/**
- * Handles user login
+ * Handles user login with enhanced security
  */
 export const POST: RequestHandler = async ({ request, cookies }: RequestEvent) => {
+	// const startTime = Date.now();
+	const clientIP = getClientIP(request, Object.fromEntries(request.headers.entries()));
+	const userAgent = request.headers.get('user-agent') || '';
+
 	try {
-		// Parse and validate request body
+		// Check rate limiting for this IP
+		const rateLimitCheck = checkAuthRateLimit(clientIP);
+		console.log(`clientIP: `, clientIP);
+		if (!rateLimitCheck.allowed) {
+			const resetTime = rateLimitCheck.resetTime || Date.now() + 15 * 60 * 1000;
+			const retryAfter = Math.ceil((resetTime - Date.now()) / 1000);
+
+			logSecurityEvent('login_rate_limit_exceeded', {
+				ip: clientIP,
+				resetTime: new Date(resetTime).toISOString()
+			}, 'warn');
+
+			return json({
+				error: 'Too many login attempts. Please try again later.',
+				retryAfter
+			}, {
+				status: 429,
+				headers: {
+					'Retry-After': retryAfter.toString()
+				}
+			});
+		}
+
+		// Parse and validate request body, validation is down below
 		let body;
 		try {
 			body = await request.json();
 		} catch (parseError) {
-			console.error('Failed to parse request body:', parseError);
+			logSecurityEvent('login_invalid_json', {
+				ip: clientIP,
+				error: parseError instanceof Error ? parseError.message : 'Unknown'
+			}, 'warn');
 			return json({ error: 'Invalid request format' }, { status: 400 });
 		}
 
-		const { username, password } = body;
+		// Validate with Zod schema
+		const validationResult = loginRequestSchema.safeParse(body);
+		if (!validationResult.success) {
+			const errors = validationResult.error.errors.map(err =>
+				`${err.path.join('.')}: ${err.message}`
+			).join(', ');
 
-		// Validate input
-		const validationError = validateLoginInput(username, password);
-		if (validationError) {
-			return json({ error: validationError }, { status: 400 });
+			logAuthEvent('failed_login', undefined, clientIP, userAgent, false);
+
+			return json({
+				error: 'Invalid input',
+				details: errors
+			}, { status: 400 });
 		}
 
-		// Sanitize username
-		const sanitizedUsername = username.trim().toLowerCase();
+		const { username, password } = validationResult.data;
 
 		// Database operations with error handling
 		let db;
 		try {
 			db = getDb();
 		} catch (dbError) {
-			console.error('Database connection error:', dbError);
-			return json({ error: 'Database connection failed' }, { status: 500 });
+			logError(dbError instanceof Error ? dbError : new Error('DB connection failed'), {
+				action: 'login_db_connection',
+				ip: clientIP
+			});
+			return json({ error: 'Service temporarily unavailable' }, { status: 503 });
 		}
 
-		// Query user with prepared statement
-		type User = {
-			id: number;
-			password: string;
-			username: string;
-		};
-
-		let user: User | undefined;
+		// Query user with prepared statement and validate with Zod
+		let user;
 		try {
-			const stmt = db.prepare('SELECT id, password, username FROM users WHERE username = ?');
-			user = stmt.get(sanitizedUsername) as User | undefined;
+			const stmt = db.prepare('SELECT id, password, username, created_at FROM users WHERE username = ?');
+			const rawUser = stmt.get(username);
+
+			if (!rawUser) {
+				// User not found - same response as invalid password for security
+				logAuthEvent('failed_login', undefined, clientIP, userAgent, false);
+				return json({ error: 'Invalid credentials' }, { status: 401 });
+			}
+
+			// Validate user data with Zod
+			const userValidation = userRowSchema.safeParse(rawUser);
+			if (!userValidation.success) {
+				logError(new Error('Invalid user data from database'), {
+					action: 'login_user_validation',
+					userId: (rawUser as Record<string, unknown>)?.id,
+					ip: clientIP
+				});
+				return json({ error: 'Authentication failed' }, { status: 500 });
+			}
+
+			user = userValidation.data;
 		} catch (queryError) {
-			console.error('Database query error:', queryError);
-			return json({ error: 'Login failed' }, { status: 500 });
+			logError(queryError instanceof Error ? queryError : new Error('DB query failed'), {
+				action: 'login_user_query',
+				username,
+				ip: clientIP
+			});
+			return json({ error: 'Authentication failed' }, { status: 500 });
 		}
 
-		// Check if user exists
-		if (!user?.id || !user?.password) {
-			// Use same error for both cases to prevent username enumeration
-			return json({ error: 'Invalid credentials' }, { status: 401 });
-		}
-
-		// Verify password
+		// Verify password with timing-safe comparison
 		let isPasswordVerified: boolean;
 		try {
 			isPasswordVerified = await verifyPassword(user.password, password);
 		} catch (verifyError) {
-			console.error('Password verification error:', verifyError);
+			logError(verifyError instanceof Error ? verifyError : new Error('Password verification failed'), {
+				action: 'login_password_verify',
+				userId: user.id,
+				ip: clientIP
+			});
 			return json({ error: 'Authentication failed' }, { status: 500 });
 		}
 
 		if (!isPasswordVerified) {
+			logAuthEvent('failed_login', user.id, clientIP, userAgent, false);
 			return json({ error: 'Invalid credentials' }, { status: 401 });
 		}
 
-		// Create JWT token
+		// Create JWT token with additional security claims
 		let token: string;
 		try {
-			token = createJWT(user.id);
+			token = createJWT(user.id, {
+				username: user.username,
+				loginTime: Date.now(),
+				ip: clientIP,
+				userAgent: userAgent.substring(0, 100) // Limit length
+			});
 		} catch (tokenError) {
-			console.error('JWT creation error:', tokenError);
+			logError(tokenError instanceof Error ? tokenError : new Error('JWT creation failed'), {
+				action: 'login_jwt_creation',
+				userId: user.id,
+				ip: clientIP
+			});
 			return json({ error: 'Authentication failed' }, { status: 500 });
 		}
 
-		// Set secure cookie
+		// Set secure cookie with additional security measures
 		try {
+			// NOTE: main code
 			cookies.set('jwt', token, {
 				path: '/',
 				httpOnly: true,
@@ -129,14 +180,34 @@ export const POST: RequestHandler = async ({ request, cookies }: RequestEvent) =
 				maxAge: 60 * 60 * 24 // 24 hours
 			});
 		} catch (cookieError) {
-			console.error('Cookie setting error:', cookieError);
+			logError(cookieError instanceof Error ? cookieError : new Error('Cookie setting failed'), {
+				action: 'login_cookie_set',
+				userId: user.id,
+				ip: clientIP
+			});
 			return json({ error: 'Authentication failed' }, { status: 500 });
 		}
 
-		return json({ success: true, message: 'Login successful' });
+		// Clear auth attempts on successful login
+		clearAuthAttempts(clientIP);
+
+		// Log successful login
+		logAuthEvent('login', user.id, clientIP, userAgent, true);
+
+		return json({
+			success: true,
+			message: 'Login successful',
+			user: {
+				id: user.id,
+				username: user.username
+			}
+		});
 
 	} catch (error) {
-		console.error('Unexpected login error:', error);
+		logError(error instanceof Error ? error : new Error('Unexpected login error'), {
+			action: 'login_unexpected_error',
+			ip: clientIP
+		});
 		return json({ error: 'Internal server error' }, { status: 500 });
 	}
 };
